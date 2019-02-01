@@ -29,27 +29,25 @@ void setup () {
     
     for (int j = 0; j < HALF_PERIODS; j++) {
         if (j % 2) // Blink
-            strip.setPixelColor(i, strip.Color(255,255,255)); 
-        else
             strip.setPixelColor(i, strip.Color(0,0,0)); 
+        else
+            strip.setPixelColor(i, strip.Color(255,255,255)); 
         strip.show(); 
         
-        unsigned long _millis = millis ();
+        //unsigned long _millis = millis ();
         for (int i = 0; i < NUMPIXELS;i++) {
-            if (millis () - _millis >= TIME_STEP) { // And write resistance in array
-                _millis = millis ();
-                data [j*NUM_POINTS + i]= analogRead (LDR_PIN);
-            }
+            data [j*NUM_POINTS + i] = analogRead (LDR_PIN);
+            delay (TIME_STEP);
         }
     }
     sd.mount ();
-    file.open();
+    file.open ();
     for (int j = 0; j < HALF_PERIODS; j++) 
        for (int i = 0; i < NUMPIXELS; i++) {
             file.write (data [j*NUM_POINTS + i]);
             file.write (", ");
        }
-    file.close();
+    file.close ();
 }
 
 void loop () {
