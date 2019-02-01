@@ -1,4 +1,5 @@
-#include
+#include <Adafruit_NeoPixel.h>
+
 
 // Collecting data each TIME_STEP milliseconds:
 #define TIME_STEP (1)
@@ -16,6 +17,11 @@
 //
 
 void setup () {
+    //Adafruit_NeoPixel strip = Adafruit_NeoPixel(60, PIN, NEO_GRB + NEO_KHZ800);
+    strip.begin();
+    strip.setBrightness(50);
+    strip.show(); // Initialize all pixels to 'off'
+    
 }
 
 void loop () {
