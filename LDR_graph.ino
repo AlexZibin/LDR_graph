@@ -1,3 +1,7 @@
+#include "FS.h"
+#include "SD.h"
+#include "SPI.h"
+
 #include <Adafruit_NeoPixel.h>
 #define NUMPIXELS      (2)
 
@@ -21,6 +25,30 @@ unsigned int data[NUM_POINTS*HALF_PERIODS];
 //
 
 void setup () {
+    Serial.begin (115200);
+    if(!SD.begin()){
+        Serial.println("Card Mount Failed");
+        return;
+    }
+    uint8_t cardType = SD.cardType();
+
+    if(cardType == CARD_NONE){
+        Serial.println("No SD card attached");
+        return;
+    }
+
+    Serial.print("SD Card Type: ");
+    if(cardType == CARD_MMC){
+        Serial.println("MMC");
+    } else if(cardType == CARD_SD){
+        Serial.println("SDSC");
+    } else if(cardType == CARD_SDHC){
+        Serial.println("SDHC");
+    } else {
+        Serial.println("UNKNOWN");
+    }
+
+
     //Adafruit_NeoPixel strip = Adafruit_NeoPixel(NUMPIXELS, LED_PIN, NEO_GRB + NEO_KHZ800);
     strip.begin();
     //strip.setBrightness(50);
@@ -40,14 +68,30 @@ void setup () {
             delay (TIME_STEP);
         }
     }
-    sd.mount ();
-    file.open ();
-    for (int j = 0; j < HALF_PERIODS; j++) 
-       for (int i = 0; i < NUMPIXELS; i++) {
-            file.write (data [j*NUM_POINTS + i]);
+
+    File file = SD.open ("/log001", FILE_WRITE);
+    //File file = SD.open(path, FILE_APPEND);
+    //Serial.printf("%u bytes read for %u ms\n", flen, end);
+    if (!file) {
+        Serial.println ("Failed to open file for writing");
+        return;
+    }
+    
+    for (int j = 0; j < HALF_PERIODS; j++) {
+        for (int i = 0; i < NUMPIXELS; i++) {
+            if (!file.write (data [j*NUM_POINTS + i])) {
+                Serial.println ("Write failed");
+                return;
+            }
             file.write (", ");
-       }
+            if (i < 20) {
+                Serial.println (data [j*NUM_POINTS + i]);
+            }
+        }
+        Serial.println ();
+    }
     file.close ();
+    Serial.println ("Completed!");
 }
 
 void loop () {
