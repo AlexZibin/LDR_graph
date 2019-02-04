@@ -6,7 +6,7 @@
 #define NUMPIXELS      (2)
 
 // Collecting data each TIME_STEP milliseconds:
-#define TIME_STEP (5)
+#define TIME_STEP (1)
 // How much measurements we will collect during one half-period:
 #define NUM_POINTS (250)
 // How much half-periods:
@@ -16,7 +16,7 @@ unsigned int data[NUM_POINTS*HALF_PERIODS];
 
 //Pins
 #define LDR_PIN (25)
-#define LED_PIN (27)
+#define LED_PIN (32)
 #define BUZZER_PIN (26)
 #define BROKEN_CIRCUIT_PIN (35)
 #define RX2_PIN (32)
@@ -24,12 +24,16 @@ unsigned int data[NUM_POINTS*HALF_PERIODS];
 #define RESET_A6_PIN (36)
 //
 
+Adafruit_NeoPixel strip = Adafruit_NeoPixel (NUMPIXELS, LED_PIN, NEO_RGB + NEO_KHZ800);
+
 void setup () {
     Serial.begin (115200);
     if(!SD.begin()){
         Serial.println("Card Mount Failed");
         return;
     }
+
+    pinMode (LDR_PIN, INPUT);
     uint8_t cardType = SD.cardType();
 
     if(cardType == CARD_NONE){
@@ -48,28 +52,35 @@ void setup () {
         Serial.println("UNKNOWN");
     }
 
-
-    //Adafruit_NeoPixel strip = Adafruit_NeoPixel(NUMPIXELS, LED_PIN, NEO_GRB + NEO_KHZ800);
     strip.begin();
     //strip.setBrightness(50);
     strip.show(); // Initialize all pixels to 'off'
     delay (100);
-    
+
+    int i;
     for (int j = 0; j < HALF_PERIODS; j++) {
-        if (j % 2) // Blink
-            strip.setPixelColor(i, strip.Color(0,0,0)); 
-        else
-            strip.setPixelColor(i, strip.Color(255,255,255)); 
+        if (j % 2) { // Blink
+            for (i = 0; i < NUMPIXELS; i++) {
+                strip.setPixelColor(i, strip.Color(0,0,0)); 
+            }
+            Serial.println ("LEDs off");
+        }
+        else {
+            for (i = 0; i < NUMPIXELS; i++) {
+                strip.setPixelColor(i, strip.Color(255,255,255)); 
+            }
+            Serial.println ("LEDs ON");
+        }
         strip.show(); 
         
         //unsigned long _millis = millis ();
-        for (int i = 0; i < NUMPIXELS;i++) {
+        for (int i = 0; i < NUM_POINTS; i++) {
             data [j*NUM_POINTS + i] = analogRead (LDR_PIN);
             delay (TIME_STEP);
         }
     }
 
-    File file = SD.open ("/log001", FILE_WRITE);
+    File file = SD.open ("/log001.txt", FILE_WRITE);
     //File file = SD.open(path, FILE_APPEND);
     //Serial.printf("%u bytes read for %u ms\n", flen, end);
     if (!file) {
@@ -78,12 +89,12 @@ void setup () {
     }
     
     for (int j = 0; j < HALF_PERIODS; j++) {
-        for (int i = 0; i < NUMPIXELS; i++) {
-            if (!file.write (data [j*NUM_POINTS + i])) {
+        for (int i = 0; i < NUM_POINTS; i++) {
+            if (!file.print (data [j*NUM_POINTS + i])) {
                 Serial.println ("Write failed");
                 return;
             }
-            file.write (", ");
+            file.print (", ");
             if (i < 20) {
                 Serial.println (data [j*NUM_POINTS + i]);
             }
